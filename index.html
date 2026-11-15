@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FireWatch – MODIS + VIIRS Harmonizer</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--text:#1b1f27;--mut:#5d6675;--bd:#d9dde4;--sea:#cfe0ee;--land:#f1efe6;--grid:#b8c6d4;--mo:#f08c00;--vi:#1c7ed6;--hm:#e03131;--acc:#d9480f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--panel:#181c25;--text:#e8ebf0;--mut:#9aa4b4;--bd:#2b3240;--sea:#0f1b2a;--land:#1b2230;--grid:#26324a;--mo:#ffa94d;--vi:#4dabf7;--hm:#ff6b6b;--acc:#ff8a4c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1218;--panel:#181c25;--text:#e8ebf0;--mut:#9aa4b4;--bd:#2b3240;--sea:#0f1b2a;--land:#1b2230;--grid:#26324a;--mo:#ffa94d;--vi:#4dabf7;--hm:#ff6b6b;--acc:#ff8a4c;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--bd)}
+header b{font-size:18px}header span{color:var(--mut);font-size:12px}
+.logo{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 50% 65%,#ffd43b,#f76707 55%,#c92a2a)}
+.wrap{display:grid;grid-template-columns:310px 1fr;gap:14px;padding:14px;max-width:1500px;margin:auto}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:14px}
+h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+label{display:block;margin:8px 0 3px;font-size:12px;color:var(--mut)}
+input[type=date],select,input[type=file]{width:100%;padding:8px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--text);font:inherit}
+input[type=range]{width:100%}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}.row label{margin:0;color:var(--text);font-size:13px}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--bg);color:var(--text);padding:8px 12px;border-radius:6px}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;width:100%;margin-top:12px}
+button:disabled{opacity:.5;cursor:default}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.side{display:flex;flex-direction:column;gap:14px}
+#mapbox{position:relative;height:min(62vh,560px);min-height:340px;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--sea)}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--bd);padding:6px 9px;border-radius:6px;font-size:12px;display:none;max-width:260px;box-shadow:0 2px 8px #0003}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}.zoom button{padding:4px 10px;font-size:16px;background:var(--panel)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
+.stat{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}.stat b{display:block;font-size:22px}.stat small{color:var(--mut)}
+.note{font-size:12px;color:var(--mut);margin-top:8px}.warn{border-left:3px solid var(--acc);padding-left:8px}
+.tw{overflow-x:auto;max-height:340px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left}th{position:sticky;top:0;background:var(--panel);color:var(--mut)}
+.how{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--bd);font-size:13px;color:var(--mut)}.how b{color:var(--acc)}.how button{margin-left:auto;padding:2px 8px}.head{padding:2px 2px 10px;font-size:16px}.dn{display:flex;gap:6px}.dn button{padding:6px 12px}summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:10px}tr[data-id]:hover{background:var(--bg)}
+</style></head>
+<body>
+<header><div class="logo"></div><div><b>FireWatch</b><br><span>Active-fire explorer · MODIS + VIIRS harmonization</span></div></header>
+<div class="how" id="how"><span><b>1</b> Pick a date</span><span><b>2</b> Choose the satellites (or upload real NASA files)</span><span><b>3</b> Red dots = the same fire seen by both satellites</span><span><b>4</b> Save the results as CSV</span><button id="hx" title="Hide">×</button></div>
+<div class="wrap">
+<div class="side">
+ <div class="card">
+  <h3>Search</h3>
+  <label for="date">Date (UTC)</label><div class="dn"><button id="dprev" title="Previous day">‹</button><input type="date" id="date"><button id="dnext" title="Next day">›</button></div>
+  <label for="region">Region</label><select id="region"></select>
+  <h3 style="margin-top:14px">Sensors</h3>
+  <div class="row"><input type="checkbox" id="useM" checked><label for="useM"><span class="dot" style="background:var(--mo)"></span> MODIS (Terra/Aqua, 1 km)</label></div>
+  <div class="row"><input type="checkbox" id="useV" checked><label for="useV"><span class="dot" style="background:var(--vi)"></span> VIIRS (S-NPP/NOAA-20, 375 m)</label></div>
+  <h3 style="margin-top:14px">Fire type</h3><div class="row"><input type="checkbox" id="veg" checked><label for="veg">Vegetation / forest fires only</label></div><div class="note" style="margin:0 0 4px">Excludes volcanoes, gas flares, industrial and offshore sources. FIRMS can’t separate forest from grassland or crop fires.</div><h3 style="margin-top:14px">Harmonization</h3>
+  <div class="row"><input type="checkbox" id="harm" checked><label for="harm"><span class="dot" style="background:var(--hm)"></span> Merge same-fire detections</label></div>
+  <details><summary>Advanced matching settings</summary><label for="km">Max distance: <span id="kmv">1.0</span> km</label><input type="range" id="km" min="0.3" max="5" step="0.1" value="1">
+  <label for="win">Max time gap: <span id="winv">90</span> min</label><input type="range" id="win" min="10" max="360" step="10" value="90">
+  </details><button class="p" id="go">Search</button>
+ </div>
+ <div class="card">
+  <h3>Data source</h3>
+  <label for="file">Upload FIRMS CSV (MODIS and/or VIIRS)</label>
+  <input type="file" id="file" accept=".csv" multiple>
+  <button id="demo" style="margin-top:8px;width:100%">Use simulated demo data</button>
+  <div class="note" id="srcnote"></div>
+ </div>
+</div>
+<div>
+ <div id="headline" class="head"></div><div id="mapbox"><canvas id="cv"></canvas><div id="tip"></div>
+  <div class="zoom"><button id="zi" title="Zoom in">+</button><button id="zo" title="Zoom out">−</button><button id="zr" title="Reset view">⟲</button></div></div>
+ <div class="note" style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 2px">
+  <span><span class="dot" style="background:var(--mo)"></span> MODIS only</span>
+  <span><span class="dot" style="background:var(--vi)"></span> VIIRS only</span>
+  <span><span class="dot" style="background:var(--hm)"></span> Harmonized (both sensors)</span></div>
+ <div class="stats" id="stats"></div>
+ <div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+   <h3 style="margin:0">Results (top 100 by FRP)</h3>
+   <button id="save" disabled>Save results as CSV</button></div>
+  <div class="note warn" id="msg"></div>
+  <div class="tw"><table id="tbl"></table></div>
+ </div>
+</div></div>
+<script>
+const $=id=>document.getElementById(id);
+const REG={World:[-180,-60,180,80],Africa:[-20,-36,52,38],'Egypt / Nile':[24,21,37,32],Europe:[-12,34,42,60],'North America':[-130,15,-60,55],'South America':[-85,-40,-30,12],Australia:[110,-45,155,-10],Asia:[60,-10,150,55]};
+const LAND=[[-17,21,-10,35,10,37,32,31,43,12,51,12,40,-3,40,-15,33,-26,20,-35,12,-17,9,4,-8,4,-17,14],[-10,36,-9,43,-2,48,5,53,10,57,20,70,30,70,40,60,30,45,28,41,22,37,12,38,3,43],[28,41,40,60,60,70,100,77,140,72,180,68,160,55,142,46,130,35,122,30,121,22,108,15,105,9,100,13,98,8,90,22,80,10,73,20,67,25,57,25,50,30,43,12,35,30],[-168,66,-140,70,-95,72,-80,63,-60,55,-55,48,-70,43,-76,35,-81,26,-97,26,-97,18,-88,14,-80,8,-85,12,-105,20,-117,32,-125,42,-125,50,-140,60,-165,60],[-80,8,-60,10,-50,0,-35,-6,-40,-22,-58,-38,-68,-54,-75,-50,-72,-30,-81,-5],[114,-22,130,-12,142,-11,153,-26,147,-38,130,-32,115,-34],[-55,60,-20,70,-20,82,-60,82]];
+Object.keys(REG).forEach(k=>$('region').add(new Option(k,k)));
+$('date').value=new Date(Date.now()-864e5).toISOString().slice(0,10);
+
+/* ---------- demo data (simulated) ---------- */
+function rng(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}let a=h;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ZONES=[[-15,35,-20,12,140],[-65,-45,-22,0,70],[125,145,-20,-12,50],[95,110,10,25,50],[-122,-110,34,46,30],[-9,30,36,42,30],[30,32.5,30.3,31.5,12],[20,30,-30,-15,30]];
+function gen(date){
+ const r=rng(date),out=[],MS={Terra:[630,1350],Aqua:[810,90]},VS={'Suomi NPP':[810,90],'NOAA-20':[790,70]};
+ const tm=(loc,lon)=>Math.round(((loc-lon*4+(r()-.5)*20)%1440+1440)%1440);
+ const mk=(src,lat,lon,frp,conf,bt,sat,dn,t,ty=0)=>out.push({src,lat,lon,date,t,frp,conf,bt,sat,dn,ty});
+ const fire=(lat,lon,small,ty=0)=>{
+  const frp=small?1+r()*4:3+(-Math.log(1-r()))*14,dn=r()<.75?0:1;
+  const mp=small?.3:.6,vp=small?.9:.88;
+  if(!small&&r()<mp||small&&r()<mp*.4){const s=r()<.7?'Aqua':'Terra';
+   mk('MODIS',lat+(r()-.5)*.012,lon+(r()-.5)*.012,+frp.toFixed(1),Math.round(20+r()*80),+(305+frp*1.6+r()*15).toFixed(1),s,dn?'N':'D',tm(MS[s][dn],lon),ty)}
+  if(r()<vp){const s=r()<.5?'Suomi NPP':'NOAA-20',n=1+(frp>12?1:0)+(frp>30?1:0),t=tm(VS[s][dn],lon);
+   for(let i=0;i<n;i++)mk('VIIRS',lat+(r()-.5)*.006,lon+(r()-.5)*.006,+(frp/n*.9).toFixed(1),[30,60,90][Math.floor(r()*3)],+(300+frp*1.4+r()*14).toFixed(1),s,dn?'N':'D',t,ty)}
+ };
+ ZONES.forEach(([a,b,c,d,n])=>{for(let i=0;i<n;i++)fire(c+r()*(d-c),a+r()*(b-a),false);for(let i=0;i<n*.6;i++)fire(c+r()*(d-c),a+r()*(b-a),true)});
+ [[-92,-88,27,28.5,3,25],[50,53,26,28,3,20],[1,3,56,58,3,10],[14.9,15.1,37.6,37.9,1,3],[-101,-99,30,32,2,12],[47,49,29,30,2,8]].forEach(([a,b,c,d,t,n])=>{for(let i=0;i<n;i++)fire(c+r()*(d-c),a+r()*(b-a),false,t)});
+ return out}
+
+/* ---------- CSV import (real FIRMS downloads) ---------- */
+let uploaded=[];
+function parseCSV(txt){
+ const L=txt.trim().split(/\r?\n/);if(L.length<2)return[];const H=L[0].split(',').map(s=>s.trim().toLowerCase()),ix=n=>H.indexOf(n),res=[];
+ const cm={l:30,n:60,h:90,low:30,nominal:60,high:90};
+ for(let i=1;i<L.length;i++){const c=L[i].split(','),g=n=>ix(n)>=0?(c[ix(n)]||'').trim():'';
+  const lat=+g('latitude'),lon=+g('longitude');if(isNaN(lat)||isNaN(lon)||!g('acq_date'))continue;
+  const ins=g('instrument').toUpperCase(),v=ins?ins.includes('VIIRS'):ix('bright_ti4')>=0;
+  const tt=g('acq_time').padStart(4,'0'),cf=g('confidence').toLowerCase();
+  res.push({src:v?'VIIRS':'MODIS',lat,lon,date:g('acq_date'),t:+tt.slice(0,2)*60+ +tt.slice(2),frp:+g('frp')||0,conf:cm[cf]??(+cf||0),bt:+(g(v?'bright_ti4':'brightness'))||0,sat:g('satellite')||'-',dn:g('daynight')||'-',ty:ix('type')>=0?(+g('type')||0):0})}
+ return res}
+$('file').onchange=async e=>{let n=0;for(const f of e.target.files){const p=parseCSV(await f.text());uploaded=uploaded.concat(p);n+=p.length}
+ if(!uploaded.length){$('srcnote').textContent='No valid FIRMS rows found in that file.';return}
+ const ds=[...new Set(uploaded.map(p=>p.date))].sort();$('date').value=ds[0];
+ $('srcnote').textContent=`Real data loaded: ${uploaded.length} detections (MODIS ${uploaded.filter(p=>p.src=='MODIS').length}, VIIRS ${uploaded.filter(p=>p.src=='VIIRS').length}). Dates: ${ds[0]}${ds.length>1?' → '+ds[ds.length-1]:''}.`;search()};
+$('demo').onclick=()=>{uploaded=[];$('file').value='';note();search()};
+function note(){$('srcnote').textContent='Showing simulated demo data. This hosted page can’t reach NASA’s servers, so download MODIS and VIIRS CSVs from firms.modaps.eosdis.nasa.gov/download and upload them here to harmonize real detections.'}
+
+/* ---------- harmonization ---------- */
+const hav=(a,b,c,d)=>{const R=6371,p=Math.PI/180,x=Math.sin((c-a)*p/2)**2+Math.cos(a*p)*Math.cos(c*p)*Math.sin((d-b)*p/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+function harmonize(M,V,km,win){
+ const B=.25,bk=new Map(),key=(a,b)=>a+','+b,g=new Map(),id=(p,i)=>p+i;
+ M.forEach((m,i)=>{const k=key(Math.floor(m.lat/B),Math.floor(m.lon/B));if(!bk.has(k))bk.set(k,[]);bk.get(k).push(i)});
+ V.forEach((v,j)=>{let best=-1,bd=1e9;const a=Math.floor(v.lat/B),o=Math.floor(v.lon/B);
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)for(const i of bk.get(key(a+dy,o+dx))||[]){const m=M[i];
+   if(Math.abs(m.t-v.t)>win)continue;const d=hav(m.lat,m.lon,v.lat,v.lon);if(d<=km&&d<bd){bd=d;best=i}}
+  if(best>=0){if(!g.has(best))g.set(best,[]);g.get(best).push({j,d:bd})}});
+ const R=[],used=new Set();let k=0;
+ g.forEach((list,i)=>{const m=M[i],vs=list.map(x=>V[x.j]);list.forEach(x=>used.add(x.j));
+  const w=vs.reduce((s,v)=>s+(v.frp||1),0),vl=vs.reduce((s,v)=>s+v.lat*(v.frp||1),0)/w,vo=vs.reduce((s,v)=>s+v.lon*(v.frp||1),0)/w;
+  const vf=vs.reduce((s,v)=>s+v.frp,0),vc=vs.reduce((s,v)=>s+v.conf,0)/vs.length,vt=Math.round(vs.reduce((s,v)=>s+v.t,0)/vs.length);
+  R.push({kind:'both',ty:m.ty,lat:vl,lon:vo,date:m.date,t:vt,frp:(m.frp+vf)/2,conf:(m.conf+vc)/2,bt:(m.bt+vs.reduce((s,v)=>s+v.bt,0)/vs.length)/2,sat:m.sat+'+'+[...new Set(vs.map(v=>v.sat))].join('/'),dn:m.dn,
+   mLat:m.lat,mLon:m.lon,vLat:vl,vLon:vo,dist:list.reduce((s,x)=>s+x.d,0)/list.length,dt:Math.abs(m.t-vt),nV:vs.length})});
+ M.forEach((m,i)=>{if(!g.has(i))R.push({kind:'MODIS',...m,mLat:m.lat,mLon:m.lon})});
+ V.forEach((v,j)=>{if(!used.has(j))R.push({kind:'VIIRS',...v,vLat:v.lat,vLon:v.lon,nV:1})});
+ return{R,pairs:g.size,merged:used.size}}
+
+/* ---------- search ---------- */
+let REC=[],view=null,tot={},hl=null;
+function search(){
+ const d=$('date').value,src=uploaded.length?uploaded:null;
+ let raw=src?src.filter(p=>p.date===d):gen(d);const allN=raw.length;if($('veg').checked)raw=raw.filter(p=>!p.ty);const exc=allN-raw.length;
+ if(uploaded.length&&!raw.length)$('msg').textContent='No detections for this date in the uploaded files.';
+ let M=$('useM').checked?raw.filter(p=>p.src==='MODIS'):[],V=$('useV').checked?raw.filter(p=>p.src==='VIIRS'):[];
+ let R,pairs=0,merged=0;
+ if($('harm').checked&&M.length&&V.length){({R,pairs,merged}=harmonize(M,V,+$('km').value,+$('win').value))}
+ else R=[...M.map(m=>({kind:'MODIS',...m,mLat:m.lat,mLon:m.lon})),...V.map(v=>({kind:'VIIRS',...v,vLat:v.lat,vLon:v.lon,nV:1}))];
+ hl=null;REC=R;tot={m:M.length,v:V.length,pairs,merged,fin:R.length};
+ REC.forEach((r,i)=>r.id='FW'+d.replace(/-/g,'')+'-'+String(i+1).padStart(5,'0'));
+ $('stats').innerHTML=[['MODIS detections',tot.m],['VIIRS detections',tot.v],['Harmonized fires',pairs],['Duplicates removed',M.length+V.length-R.length],['Final records',R.length],['Non-vegetation excluded',exc]].map(([a,b])=>`<div class="stat"><b>${b}</b><small>${a}</small></div>`).join('');
+ $('headline').innerHTML=R.length?`<b>${R.length.toLocaleString()}</b> fire${R.length>1?'s':''} on ${d}`+($('harm').checked&&M.length&&V.length?` — <b>${pairs}</b> confirmed by both satellites (red dots).`:'.'):'No fires found for this date and settings. Try another date, or untick “Vegetation only” to see all heat sources.';
+ if(raw.length)$('msg').textContent=`${M.length} MODIS + ${V.length} VIIRS detections, matched within ${$('km').value} km and ${$('win').value} min. Merged records use the sharper VIIRS position and the average fire power. Click a row to zoom to it.`;
+ table();draw();$('save').disabled=!(dl&&R.length)}
+const hh=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+const LB={both:'MODIS+VIIRS',MODIS:'MODIS',VIIRS:'VIIRS'},TY={0:'Vegetation fire',1:'Volcano',2:'Static land source',3:'Offshore'};
+function table(){const rows=[...REC].sort((a,b)=>b.frp-a.frp).slice(0,100);
+ $('tbl').innerHTML='<tr><th>ID</th><th>Source</th><th>Lat</th><th>Lon</th><th>Time UTC</th><th title="Fire radiative power: how intense the fire is">Fire power (MW)</th><th title="How sure the satellite is that this is a real fire">Confidence %</th><th>Satellite</th><th>Type</th></tr>'+rows.map(r=>`<tr data-id="${r.id}" style="cursor:pointer"><td>${r.id}</td><td>${LB[r.kind]}</td><td>${r.lat.toFixed(4)}</td><td>${r.lon.toFixed(4)}</td><td>${hh(r.t)}</td><td>${r.frp.toFixed(1)}</td><td>${Math.round(r.conf)}</td><td>${r.sat}</td><td>${TY[r.ty||0]}</td></tr>`).join('')}
+
+/* ---------- CSV export ---------- */
+const COLS=['record_id','source','latitude','longitude','acq_date','acq_time_utc','frp_mw','confidence_pct','brightness_k','satellite','daynight','fire_type','modis_lat','modis_lon','viirs_lat','viirs_lon','match_dist_km','time_gap_min','viirs_pixels','harmonized'];
+function csv(){const f=(v,n)=>v==null||v===''?'':typeof v=='number'?v.toFixed(n):v;
+ return COLS.join(',')+'\n'+REC.map(r=>[r.id,LB[r.kind],f(r.lat,5),f(r.lon,5),r.date,hh(r.t),f(r.frp,1),Math.round(r.conf),f(r.bt,1),r.sat,r.dn,TY[r.ty||0],f(r.mLat,5),f(r.mLon,5),f(r.vLat,5),f(r.vLon,5),r.kind=='both'?f(r.dist,3):'',r.kind=='both'?r.dt:'',r.nV??'',r.kind=='both'?'yes':'no'].join(',')).join('\n')}
+let dl=null;
+$('save').onclick=async()=>{try{await dl.save({filename:`firms_harmonized_${$('date').value}.csv`,data:csv()})}catch(e){if(e&&e.code!=='declined')$('msg').textContent='Could not save: '+(e.message||e.code)}};
+try{window.claude&&claude.use('downloads').then(d=>{dl=d;$('save').style.display=d?'':'none';$('save').disabled=!(d&&REC.length)}).catch(()=>{$('save').style.display='none'})}catch(e){$('save').style.display='none'}
+
+/* ---------- map ---------- */
+const cv=$('cv'),ctx=cv.getContext('2d'),tip=$('tip');let W=0,H=0,dpr=1,pts=[];
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function fit(b){const ar=W/H;let [x0,y0,x1,y1]=b,cx=(x0+x1)/2,cy=(y0+y1)/2,w=x1-x0,h=y1-y0;if(w/h<ar)w=h*ar;else h=w/ar;view=[cx-w/2,cy-h/2,cx+w/2,cy+h/2]}
+function size(){const r=cv.getBoundingClientRect();dpr=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;if(!view||!view.fresh)fit(REG[$('region').value]);draw()}
+const X=l=>(l-view[0])/(view[2]-view[0])*W,Y=l=>(view[3]-l)/(view[3]-view[1])*H;
+function draw(){if(!view||!W)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=css('--sea');ctx.fillRect(0,0,W,H);
+ ctx.fillStyle=css('--land');LAND.forEach(p=>{ctx.beginPath();for(let i=0;i<p.length;i+=2){const x=X(p[i]),y=Y(p[i+1]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fill()});
+ const span=view[2]-view[0],st=span>200?30:span>80?10:span>30?5:span>10?2:1;ctx.strokeStyle=css('--grid');ctx.fillStyle=css('--mut');ctx.lineWidth=.5;ctx.font='10px system-ui';ctx.beginPath();
+ for(let x=Math.ceil(view[0]/st)*st;x<=view[2];x+=st){ctx.moveTo(X(x),0);ctx.lineTo(X(x),H);ctx.fillText(x+'°',X(x)+2,H-3)}
+ for(let y=Math.ceil(view[1]/st)*st;y<=view[3];y+=st){ctx.moveTo(0,Y(y));ctx.lineTo(W,Y(y));ctx.fillText(y+'°',3,Y(y)-2)}ctx.stroke();
+ const r=Math.max(2,Math.min(8,W/span*.02)),col={MODIS:css('--mo'),VIIRS:css('--vi'),both:css('--hm')};pts=[];
+ ['MODIS','VIIRS','both'].forEach(k=>{ctx.fillStyle=col[k];ctx.globalAlpha=k=='both'?1:.75;REC.forEach(p=>{if(p.kind!==k)return;const x=X(p.lon),y=Y(p.lat);if(x<-9||y<-9||x>W+9||y>H+9)return;pts.push([x,y,p]);ctx.beginPath();ctx.arc(x,y,k=='both'?r*1.5:k=='MODIS'?r*1.2:r,0,7);ctx.fill();if(k=='both'){ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke()}})});ctx.globalAlpha=1;if(hl){ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(hl.lon),Y(hl.lat),14,0,7);ctx.stroke()}}
+function zoom(f,cx=W/2,cy=H/2){const lx=view[0]+cx/W*(view[2]-view[0]),ly=view[3]-cy/H*(view[3]-view[1]);view=[lx+(view[0]-lx)*f,ly+(view[1]-ly)*f,lx+(view[2]-lx)*f,ly+(view[3]-ly)*f];view.fresh=1;draw()}
+let drag=null;
+cv.onpointerdown=e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'};
+cv.onpointerup=()=>{drag=null;cv.style.cursor='grab'};
+cv.onpointermove=e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+ if(drag){const dx=(e.clientX-drag[0])/W*(view[2]-view[0]),dy=(e.clientY-drag[1])/H*(view[3]-view[1]);view=[view[0]-dx,view[1]+dy,view[2]-dx,view[3]+dy];view.fresh=1;drag=[e.clientX,e.clientY];draw();tip.style.display='none';return}
+ let b=null,bd=100;for(const q of pts){const d=(q[0]-mx)**2+(q[1]-my)**2;if(d<bd){bd=d;b=q}}
+ if(b){const p=b[2];tip.style.display='block';tip.style.left=Math.min(mx+12,W-270)+'px';tip.style.top=my+12+'px';
+  tip.innerHTML=`<b>${LB[p.kind]}</b> · ${p.id}<br>${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}<br>${p.date} ${hh(p.t)} UTC · ${p.sat}<br>${TY[p.ty||0]}<br>FRP ${p.frp.toFixed(1)} MW · conf ${Math.round(p.conf)}%`+(p.kind=='both'?`<br>match ${p.dist.toFixed(2)} km, ${p.dt} min apart, ${p.nV} VIIRS px`:'')}else tip.style.display='none'};
+cv.onwheel=e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY>0?1.25:.8,e.clientX-r.left,e.clientY-r.top)};
+const sh=n=>{const d=new Date($('date').value+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);$('date').value=d.toISOString().slice(0,10);search()};$('dprev').onclick=()=>sh(-1);$('dnext').onclick=()=>sh(1);$('hx').onclick=()=>$('how').style.display='none';$('zr').onclick=()=>{fit(REG[$('region').value]);draw()};
+$('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;const r=REC.find(x=>x.id===tr.dataset.id);if(r){hl=r;fit([r.lon-.5,r.lat-.5,r.lon+.5,r.lat+.5]);view.fresh=1;draw();$('mapbox').scrollIntoView({behavior:'smooth',block:'center'})}};
+$('zi').onclick=()=>zoom(.7);$('zo').onclick=()=>zoom(1.4);
+$('region').onchange=()=>{fit(REG[$('region').value]);draw()};
+$('km').oninput=e=>$('kmv').textContent=(+e.target.value).toFixed(1);$('win').oninput=e=>$('winv').textContent=e.target.value;
+$('go').onclick=search;['useM','useV','harm','veg'].forEach(i=>$(i).onchange=search);$('date').onchange=search;
+addEventListener('resize',size);matchMedia('(prefers-color-scheme:dark)').onchange=draw;
+note();size();search();
+</script></body></html>
