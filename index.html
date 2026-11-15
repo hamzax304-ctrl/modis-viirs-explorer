@@ -1,203 +1,294 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FireWatch – MODIS + VIIRS Harmonizer</title>
+<title>Satellite Showdown: MODIS vs VIIRS</title>
+<meta name="description" content="A game that compares NASA MODIS and VIIRS satellite fire detections over Alaska. Guess, score points, and see where the two sensors agree.">
+<meta property="og:title" content="Satellite Showdown: MODIS vs VIIRS">
+<meta property="og:description" content="Guess which satellite sees more fire, then explore how often MODIS and VIIRS spot the same hotspots.">
+<meta name="theme-color" content="#6a3fa0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Source+Sans+3:wght@400;600&display=swap">
 <style>
-:root{--bg:#f4f5f7;--panel:#fff;--text:#1b1f27;--mut:#5d6675;--bd:#d9dde4;--sea:#cfe0ee;--land:#f1efe6;--grid:#b8c6d4;--mo:#f08c00;--vi:#1c7ed6;--hm:#e03131;--acc:#d9480f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--panel:#181c25;--text:#e8ebf0;--mut:#9aa4b4;--bd:#2b3240;--sea:#0f1b2a;--land:#1b2230;--grid:#26324a;--mo:#ffa94d;--vi:#4dabf7;--hm:#ff6b6b;--acc:#ff8a4c;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0f1218;--panel:#181c25;--text:#e8ebf0;--mut:#9aa4b4;--bd:#2b3240;--sea:#0f1b2a;--land:#1b2230;--grid:#26324a;--mo:#ffa94d;--vi:#4dabf7;--hm:#ff6b6b;--acc:#ff8a4c;color-scheme:dark}
-*{box-sizing:border-box}html,body{margin:0}
-body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--bd)}
-header b{font-size:18px}header span{color:var(--mut);font-size:12px}
-.logo{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 50% 65%,#ffd43b,#f76707 55%,#c92a2a)}
-.wrap{display:grid;grid-template-columns:310px 1fr;gap:14px;padding:14px;max-width:1500px;margin:auto}
-@media(max-width:860px){.wrap{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:14px}
-h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
-label{display:block;margin:8px 0 3px;font-size:12px;color:var(--mut)}
-input[type=date],select,input[type=file]{width:100%;padding:8px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--text);font:inherit}
-input[type=range]{width:100%}
-.row{display:flex;align-items:center;gap:8px;margin:6px 0}.row label{margin:0;color:var(--text);font-size:13px}
-button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--bg);color:var(--text);padding:8px 12px;border-radius:6px}
-button.p{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;width:100%;margin-top:12px}
-button:disabled{opacity:.5;cursor:default}
-.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
-.side{display:flex;flex-direction:column;gap:14px}
-#mapbox{position:relative;height:min(62vh,560px);min-height:340px;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--sea)}
-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--bd);padding:6px 9px;border-radius:6px;font-size:12px;display:none;max-width:260px;box-shadow:0 2px 8px #0003}
-.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}.zoom button{padding:4px 10px;font-size:16px;background:var(--panel)}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
-.stat{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}.stat b{display:block;font-size:22px}.stat small{color:var(--mut)}
-.note{font-size:12px;color:var(--mut);margin-top:8px}.warn{border-left:3px solid var(--acc);padding-left:8px}
-.tw{overflow-x:auto;max-height:340px;overflow-y:auto}
-table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left}th{position:sticky;top:0;background:var(--panel);color:var(--mut)}
-.how{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--bd);font-size:13px;color:var(--mut)}.how b{color:var(--acc)}.how button{margin-left:auto;padding:2px 8px}.head{padding:2px 2px 10px;font-size:16px}.dn{display:flex;gap:6px}.dn button{padding:6px 12px}summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:10px}tr[data-id]:hover{background:var(--bg)}
-</style></head>
+:root{--bg:#eef1ef;--surf:#fff;--ink:#1b2a31;--mute:#5d6e75;--line:#d3dbd8;--modis:#1f6f8b;--viirs:#c9501f;--both:#6a3fa0;--ok:#e9e1f4;--good:#2a8a4a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a1e;--surf:#1a252a;--ink:#e6edee;--mute:#92a4aa;--line:#2f4048;--modis:#58b4d1;--viirs:#f08a5b;--both:#b794e8;--ok:#2c2640;--good:#5fcf85}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.5 "Source Sans 3",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:22px 16px 60px}
+h1,h2,.big{font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.05;margin:0}
+h1{font-size:clamp(34px,8vw,56px);font-weight:800}
+h2{font-size:clamp(24px,5vw,32px);font-weight:800;margin-bottom:14px}
+.m{color:var(--modis)}.v{color:var(--viirs)}.mute{color:var(--mute)}
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px}
+.dots{display:flex;gap:6px;flex:1;min-width:120px}
+.dots i{flex:1;height:10px;border-radius:5px;background:var(--line)}
+.dots i.on{background:var(--both)}
+.pill{background:var(--ink);color:var(--bg);font:700 16px "Bricolage Grotesque",sans-serif;padding:5px 14px;border-radius:99px;white-space:nowrap}
+.card{background:var(--surf);border:2px solid var(--line);border-radius:16px;padding:22px}
+.btn{font:700 18px "Bricolage Grotesque",sans-serif;border:2px solid var(--ink);background:var(--surf);color:var(--ink);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--ink);transition:transform .08s,box-shadow .08s;text-align:center}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.go{background:var(--both);border-color:var(--both);color:#fff;box-shadow:0 4px 0 #3d2260}
+.btn.mo{background:var(--modis);border-color:var(--modis);color:#fff;box-shadow:0 4px 0 #0f3e50}
+.btn.vi{background:var(--viirs);border-color:var(--viirs);color:#fff;box-shadow:0 4px 0 #6e2a0e}
+.btn:disabled{opacity:.45;transform:none;cursor:default}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.row.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:520px){.row.three{grid-template-columns:1fr}}
+:focus-visible{outline:3px solid var(--both);outline-offset:3px}
+input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+label.btn:focus-within{outline:3px solid var(--both);outline-offset:3px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}
+.team{border-radius:16px;padding:18px;color:#fff}
+.team b{display:block;font:800 28px "Bricolage Grotesque",sans-serif}
+.team.mo{background:var(--modis)}.team.vi{background:var(--viirs)}
+.bars{margin:16px 0}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:600}
+.bar span.t{width:60px}
+.bar .tr{flex:1;background:var(--line);border-radius:8px;height:30px;overflow:hidden}
+.bar .tr i{display:block;height:100%;width:0;border-radius:8px;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.bar b{min-width:84px;text-align:right}
+.res{font:800 24px "Bricolage Grotesque",sans-serif;margin:8px 0}
+.win{color:var(--good)}.lose{color:var(--viirs)}
+.twin{background:var(--ok);border-radius:10px;padding:8px 12px;margin:10px 0;font-weight:600;color:var(--both)}
+.pop{animation:pop .35s}
+@keyframes pop{0%{transform:scale(.9)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.pop{animation:none}.bar .tr i{transition:none}}
+input[type=range]{width:100%;accent-color:var(--both);height:36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.grid div{background:var(--surf);border:2px solid var(--line);border-top:5px solid var(--both);border-radius:12px;padding:12px 14px;color:var(--mute);font-size:15px}
+.grid b{display:block;font:800 30px "Bricolage Grotesque",sans-serif;color:var(--both)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.badge{background:var(--ok);color:var(--both);font-weight:700;padding:6px 14px;border-radius:99px}
+.rank{font-size:clamp(30px,7vw,46px);font-weight:800;color:var(--both)}
+canvas{width:100%;height:380px;background:var(--surf);border:2px solid var(--line);border-radius:12px;display:block}
+.leg{display:flex;flex-wrap:wrap;gap:14px;font-size:14px;color:var(--mute);margin:8px 0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.chart{background:var(--surf);border:2px solid var(--line);border-radius:12px;padding:10px}
+svg text{fill:var(--mute);font:12px "Source Sans 3",sans-serif}
+.note{background:var(--surf);border-left:5px solid var(--viirs);padding:12px 16px;border-radius:8px;margin:16px 0}
+.chip{display:inline-block;font-size:14px;border:1px solid var(--line);background:var(--surf);padding:2px 10px;border-radius:99px;margin:2px}
+:root[data-theme="dark"]{--bg:#121a1e;--surf:#1a252a;--ink:#e6edee;--mute:#92a4aa;--line:#2f4048;--modis:#58b4d1;--viirs:#f08a5b;--both:#b794e8;--ok:#2c2640;--good:#5fcf85}
+.top{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;align-items:center;gap:8px}
+.brand{font:800 18px "Bricolage Grotesque",sans-serif;flex:1}
+.tb{font:600 15px inherit;font-family:inherit;background:transparent;color:var(--ink);border:2px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer}
+.tb:hover{border-color:var(--both)}
+footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-size:14px}
+footer a,dialog a{color:var(--both)}
+dialog{background:var(--surf);color:var(--ink);border:2px solid var(--ink);border-radius:16px;max-width:600px;width:calc(100% - 32px);padding:22px;max-height:85vh}
+dialog::backdrop{background:rgba(10,20,25,.6)}
+dialog h3{font:800 19px "Bricolage Grotesque",sans-serif;margin:18px 0 4px}
+dialog p,dialog li{margin:4px 0;font-size:16px}
+.filt{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.btn.f{font-size:15px;padding:8px 14px;box-shadow:none}
+.btn.f[aria-pressed=true]{background:var(--both);border-color:var(--both);color:#fff}
+.wrap{overflow-x:auto;background:var(--surf);border:2px solid var(--line);border-radius:12px;margin:14px 0}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+tr.sim td{background:var(--ok)}
+body.drag{outline:4px dashed var(--both);outline-offset:-8px}
+.upbar{display:block;border:3px dashed var(--both);background:var(--ok);border-radius:16px;padding:24px 18px;text-align:center;cursor:pointer;margin:20px 0}
+.upbar:hover{background:var(--surf)}
+.upbar:focus-within{outline:3px solid var(--both);outline-offset:3px}
+.upbar b{display:block;font:800 24px "Bricolage Grotesque",sans-serif;color:var(--both)}
+.upbar span{color:var(--mute)}
+.sel{font:600 16px inherit;font-family:inherit;padding:8px 10px;border-radius:8px;border:2px solid var(--ink);background:var(--surf);color:var(--ink)}
+</style>
+</head>
 <body>
-<header><div class="logo"></div><div><b>FireWatch</b><br><span>Active-fire explorer · MODIS + VIIRS harmonization</span></div></header>
-<div class="how" id="how"><span><b>1</b> Pick a date</span><span><b>2</b> Choose the satellites (or upload real NASA files)</span><span><b>3</b> Red dots = the same fire seen by both satellites</span><span><b>4</b> Save the results as CSV</span><button id="hx" title="Hide">×</button></div>
-<div class="wrap">
-<div class="side">
- <div class="card">
-  <h3>Search</h3>
-  <label for="date">Date (UTC)</label><div class="dn"><button id="dprev" title="Previous day">‹</button><input type="date" id="date"><button id="dnext" title="Next day">›</button></div>
-  <label for="region">Region</label><select id="region"></select>
-  <h3 style="margin-top:14px">Sensors</h3>
-  <div class="row"><input type="checkbox" id="useM" checked><label for="useM"><span class="dot" style="background:var(--mo)"></span> MODIS (Terra/Aqua, 1 km)</label></div>
-  <div class="row"><input type="checkbox" id="useV" checked><label for="useV"><span class="dot" style="background:var(--vi)"></span> VIIRS (S-NPP/NOAA-20, 375 m)</label></div>
-  <h3 style="margin-top:14px">Fire type</h3><div class="row"><input type="checkbox" id="veg" checked><label for="veg">Vegetation / forest fires only</label></div><div class="note" style="margin:0 0 4px">Excludes volcanoes, gas flares, industrial and offshore sources. FIRMS can’t separate forest from grassland or crop fires.</div><h3 style="margin-top:14px">Harmonization</h3>
-  <div class="row"><input type="checkbox" id="harm" checked><label for="harm"><span class="dot" style="background:var(--hm)"></span> Merge same-fire detections</label></div>
-  <details><summary>Advanced matching settings</summary><label for="km">Max distance: <span id="kmv">1.0</span> km</label><input type="range" id="km" min="0.3" max="5" step="0.1" value="1">
-  <label for="win">Max time gap: <span id="winv">90</span> min</label><input type="range" id="win" min="10" max="360" step="10" value="90">
-  </details><button class="p" id="go">Search</button>
- </div>
- <div class="card">
-  <h3>Data source</h3>
-  <label for="file">Upload FIRMS CSV (MODIS and/or VIIRS)</label>
-  <input type="file" id="file" accept=".csv" multiple>
-  <button id="demo" style="margin-top:8px;width:100%">Use simulated demo data</button>
-  <div class="note" id="srcnote"></div>
- </div>
-</div>
-<div>
- <div id="headline" class="head"></div><div id="mapbox"><canvas id="cv"></canvas><div id="tip"></div>
-  <div class="zoom"><button id="zi" title="Zoom in">+</button><button id="zo" title="Zoom out">−</button><button id="zr" title="Reset view">⟲</button></div></div>
- <div class="note" style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 2px">
-  <span><span class="dot" style="background:var(--mo)"></span> MODIS only</span>
-  <span><span class="dot" style="background:var(--vi)"></span> VIIRS only</span>
-  <span><span class="dot" style="background:var(--hm)"></span> Harmonized (both sensors)</span></div>
- <div class="stats" id="stats"></div>
- <div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-   <h3 style="margin:0">Results (top 100 by FRP)</h3>
-   <button id="save" disabled>Save results as CSV</button></div>
-  <div class="note warn" id="msg"></div>
-  <div class="tw"><table id="tbl"></table></div>
- </div>
-</div></div>
+<header class="top"><span class="brand">🔥 Satellite Showdown</span><button class="tb" id="ab">How to play</button><button class="tb" id="th" aria-pressed="false">Light/dark</button></header>
+<noscript><p style="padding:16px">This game needs JavaScript to run.</p></noscript>
+<main id="app"></main>
+<footer>Fire data comes from NASA FIRMS (MODIS and VIIRS active fire products). This is an independent educational project and is not an official NASA product. Detections are not confirmed fires.</footer>
+<dialog id="dlg" aria-labelledby="dt"><h2 id="dt" style="font-size:26px">How it works</h2>
+<h3>Playing</h3><p>Load your FIRMS CSV files (or use the demo), then guess which sensor wins each round. Correct guesses earn 10 points. When the sensors turn out at least 80% alike, you earn 5 teamwork points. The final screen shows where they agree.</p>
+<h3>The two sensors</h3><p><b>MODIS</b> sees fires at about 1 km resolution. <b>VIIRS</b> sees about 375 m, so it usually finds more and smaller fires. VIIRS files can come from several satellites (Suomi NPP, NOAA-20 “J1”, NOAA-21 “J2”).</p>
+<h3>Words you’ll see</h3><ul><li><b>FRP</b>: fire radiative power in megawatts, a measure of how intense a fire is.</li><li><b>Brightness</b>: the heat signal in kelvin (K).</li><li><b>Confidence</b>: how sure the sensor is. Low, nominal or high.</li><li><b>Matched</b>: a MODIS and a VIIRS hotspot within 2 km of each other.</li><li><b>UTC hour</b>: detection time in universal time, not Alaska time.</li></ul>
+<h3>Getting data</h3><p>Download the 24-hour country or region CSV files from the <a href="https://firms.modaps.eosdis.nasa.gov/active_fire/" target="_blank" rel="noopener">NASA FIRMS active fire page</a>. Winter files are often empty because few fires burn then.</p>
+<h3>Privacy</h3><p>Your files never leave your device. Only your best score is saved, in this browser.</p>
+<p style="margin-top:18px"><button class="btn go" id="cl">Got it</button></p></dialog>
 <script>
-const $=id=>document.getElementById(id);
-const REG={World:[-180,-60,180,80],Africa:[-20,-36,52,38],'Egypt / Nile':[24,21,37,32],Europe:[-12,34,42,60],'North America':[-130,15,-60,55],'South America':[-85,-40,-30,12],Australia:[110,-45,155,-10],Asia:[60,-10,150,55]};
-const LAND=[[-17,21,-10,35,10,37,32,31,43,12,51,12,40,-3,40,-15,33,-26,20,-35,12,-17,9,4,-8,4,-17,14],[-10,36,-9,43,-2,48,5,53,10,57,20,70,30,70,40,60,30,45,28,41,22,37,12,38,3,43],[28,41,40,60,60,70,100,77,140,72,180,68,160,55,142,46,130,35,122,30,121,22,108,15,105,9,100,13,98,8,90,22,80,10,73,20,67,25,57,25,50,30,43,12,35,30],[-168,66,-140,70,-95,72,-80,63,-60,55,-55,48,-70,43,-76,35,-81,26,-97,26,-97,18,-88,14,-80,8,-85,12,-105,20,-117,32,-125,42,-125,50,-140,60,-165,60],[-80,8,-60,10,-50,0,-35,-6,-40,-22,-58,-38,-68,-54,-75,-50,-72,-30,-81,-5],[114,-22,130,-12,142,-11,153,-26,147,-38,130,-32,115,-34],[-55,60,-20,70,-20,82,-60,82]];
-Object.keys(REG).forEach(k=>$('region').add(new Option(k,k)));
-$('date').value=new Date(Date.now()-864e5).toISOString().slice(0,10);
+const $=s=>document.querySelector(s),app=$('#app');
+let D={MODIS:[],VIIRS:[]},files=[],demo=false,pre=false,ctry=0,G;
+// Simplified country outlines as [lon,lat] points, enough for context, not for surveying.
+const COUNTRIES=[
+{n:'Alaska (USA)',p:[[-141,69.65],[-145,70.1],[-150,70.5],[-156.6,71.35],[-160,70.8],[-163.5,69.6],[-166.3,68.4],[-163,67.1],[-165.5,66.4],[-168.1,65.6],[-164,64.5],[-161,64.4],[-165.3,62.6],[-166,61.5],[-162,59.9],[-162,58.5],[-158.5,58.7],[-157,57.5],[-162,55.5],[-164.8,54.6],[-160,55.4],[-156,57.2],[-153.5,58.5],[-152,60],[-149.5,61],[-150,59.3],[-148,60.1],[-146,60.8],[-144,60],[-141.5,59.9],[-139.5,59.5],[-137.5,58.3],[-135.5,57.2],[-133.5,55.6],[-130.8,54.9],[-130,55.9],[-132,57.8],[-135,59.6],[-137.5,59.1],[-139.8,60.3],[-141,60.3]]},
+{n:'United States (lower 48)',p:[[-124.7,48.4],[-123,48.3],[-122.8,49],[-95.2,49],[-95,49.4],[-89.6,48],[-84.8,46.9],[-82.5,45.3],[-82.4,43],[-83.1,42],[-79,43.2],[-76.8,43.6],[-75,45],[-71.5,45],[-70.2,46.5],[-69,47.4],[-67.8,47],[-67,44.8],[-70,43.7],[-70.6,42],[-74,40.5],[-75.9,37],[-75.5,35.3],[-78.5,33.8],[-81,31.5],[-80,26.8],[-80.4,25.2],[-81.8,26.1],[-82.8,28],[-84,30],[-86,30.4],[-89.5,30.2],[-91,29.2],[-94,29.5],[-97.2,27.7],[-97.2,25.9],[-99.5,27.5],[-101.5,29.8],[-104.5,29.6],[-106.5,31.8],[-108.2,31.8],[-111,31.3],[-114.8,32.5],[-117.1,32.5],[-118.5,34],[-120.6,34.6],[-121.9,36.6],[-122.5,37.8],[-123.8,39.5],[-124.4,40.4],[-124.1,42],[-124.5,43],[-124,46.2]]},
+{n:'Canada',p:[[-141,69.6],[-135,69],[-128,70],[-115,68.3],[-108,68],[-95,68.5],[-85,69.5],[-82,67.5],[-86,64.5],[-94,59],[-92,57],[-82.2,55],[-79.5,51.5],[-78.5,54.5],[-77,60],[-72,62],[-65,60.3],[-61.5,56.5],[-57.5,54.5],[-55.7,52.2],[-59,48],[-65,49],[-66.8,45],[-67.8,47],[-70.2,46.5],[-71.5,45],[-75,45],[-76.8,43.6],[-79,43.2],[-82.4,43],[-82.5,45.3],[-84.8,46.9],[-89.6,48],[-95,49.4],[-95.2,49],[-123,49],[-125,50],[-128,51],[-130.5,54.5],[-130,55.9],[-135,59.6],[-139.8,60.3],[-141,60.3]]},
+{n:'Brazil',p:[[-51.6,4.3],[-50,1.8],[-48,-0.6],[-44,-2.4],[-40,-2.8],[-35.2,-5.2],[-34.8,-8],[-37,-11.2],[-39,-14.8],[-39,-18],[-41,-22],[-44,-23.2],[-48.6,-26.2],[-48.6,-28.5],[-50.5,-30.5],[-53.4,-33.7],[-57.6,-30.2],[-56,-28.5],[-53.8,-27.2],[-54.5,-25.6],[-57.6,-27.4],[-58.2,-22],[-57.9,-20],[-60,-16.3],[-65,-10.5],[-69.6,-10.9],[-73.5,-8.5],[-70.5,-4.5],[-69.5,-1],[-70,1.5],[-67,2.2],[-64,4.2],[-60,5.2],[-57,2],[-54,2.2]]},
+{n:'Australia',p:[[113.3,-22],[114.2,-26],[115,-34.3],[118,-35],[123.5,-34],[129,-31.7],[134,-32.7],[137.8,-33],[140,-38],[144,-38.5],[147,-38],[150,-37.5],[153.2,-30],[153,-25.5],[149,-21],[145.5,-15],[143.5,-12.5],[142.5,-10.8],[141.5,-13],[141.5,-17],[139,-17.5],[136,-15],[137,-12],[132.5,-11.4],[130,-12.5],[129,-15],[126,-14],[122,-17],[121,-19.5],[117,-20.7]]},
+{n:'Spain (mainland)',p:[[-9.3,43.1],[-7,43.7],[-2,43.4],[-1.5,43],[3.2,42.4],[3,41.8],[0.8,41],[-0.3,39.5],[0,38.7],[-0.7,37.6],[-2,36.8],[-4.5,36.7],[-5.4,36],[-6.3,36.6],[-7.4,37.2],[-7.4,38.2],[-7,39.7],[-7.1,41],[-6.8,41.9],[-8.2,42],[-8.7,42.1]]},
+{n:'Greece',p:[[20.3,39.7],[20.8,40.9],[22.9,41.3],[26.1,41.7],[26.3,40.9],[24.6,40.8],[23.6,40.3],[22.8,40.4],[22.9,39.3],[24,38.5],[24,37.8],[23.2,37.7],[23.2,36.6],[22.4,36.4],[21.6,36.8],[21.1,37.9],[21.2,38.9],[20.6,39.2]]},
+{n:'Turkey',p:[[26.1,40.9],[28,41.9],[31.5,41.1],[35,42],[38,41],[41.5,41.5],[44.8,39.7],[44.5,37.2],[42,37.1],[38.5,36.9],[36,36.8],[32,36.1],[30.5,36.4],[28,36.8],[27.2,37.3],[26.3,38.3],[26.7,39.4],[26.1,40.1],[26.7,40.5]]}];
+const fmt=(x,d=0)=>isFinite(x)?x.toLocaleString('en',{maximumFractionDigits:d}):'–';
 
-/* ---------- demo data (simulated) ---------- */
-function rng(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}let a=h;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const ZONES=[[-15,35,-20,12,140],[-65,-45,-22,0,70],[125,145,-20,-12,50],[95,110,10,25,50],[-122,-110,34,46,30],[-9,30,36,42,30],[30,32.5,30.3,31.5,12],[20,30,-30,-15,30]];
-function gen(date){
- const r=rng(date),out=[],MS={Terra:[630,1350],Aqua:[810,90]},VS={'Suomi NPP':[810,90],'NOAA-20':[790,70]};
- const tm=(loc,lon)=>Math.round(((loc-lon*4+(r()-.5)*20)%1440+1440)%1440);
- const mk=(src,lat,lon,frp,conf,bt,sat,dn,t,ty=0)=>out.push({src,lat,lon,date,t,frp,conf,bt,sat,dn,ty});
- const fire=(lat,lon,small,ty=0)=>{
-  const frp=small?1+r()*4:3+(-Math.log(1-r()))*14,dn=r()<.75?0:1;
-  const mp=small?.3:.6,vp=small?.9:.88;
-  if(!small&&r()<mp||small&&r()<mp*.4){const s=r()<.7?'Aqua':'Terra';
-   mk('MODIS',lat+(r()-.5)*.012,lon+(r()-.5)*.012,+frp.toFixed(1),Math.round(20+r()*80),+(305+frp*1.6+r()*15).toFixed(1),s,dn?'N':'D',tm(MS[s][dn],lon),ty)}
-  if(r()<vp){const s=r()<.5?'Suomi NPP':'NOAA-20',n=1+(frp>12?1:0)+(frp>30?1:0),t=tm(VS[s][dn],lon);
-   for(let i=0;i<n;i++)mk('VIIRS',lat+(r()-.5)*.006,lon+(r()-.5)*.006,+(frp/n*.9).toFixed(1),[30,60,90][Math.floor(r()*3)],+(300+frp*1.4+r()*14).toFixed(1),s,dn?'N':'D',t,ty)}
- };
- ZONES.forEach(([a,b,c,d,n])=>{for(let i=0;i<n;i++)fire(c+r()*(d-c),a+r()*(b-a),false);for(let i=0;i<n*.6;i++)fire(c+r()*(d-c),a+r()*(b-a),true)});
- [[-92,-88,27,28.5,3,25],[50,53,26,28,3,20],[1,3,56,58,3,10],[14.9,15.1,37.6,37.9,1,3],[-101,-99,30,32,2,12],[47,49,29,30,2,8]].forEach(([a,b,c,d,t,n])=>{for(let i=0;i<n;i++)fire(c+r()*(d-c),a+r()*(b-a),false,t)});
- return out}
+function parse(t){const L=t.trim().split(/\r?\n/),h=L[0].split(',');
+ return{h,rows:L.slice(1).filter(Boolean).map(l=>{const c=l.split(','),o={};h.forEach((k,i)=>o[k]=c[i]);return o})}}
+function norm(r,modis){let c;
+ if(modis){const n=+r.confidence;c=n>=80?'high':n>=30?'nominal':'low'}
+ else c={l:'low',n:'nominal',h:'high'}[(r.confidence||'').toLowerCase()]||'nominal';
+ return{lat:+r.latitude,lon:+r.longitude,bt:+(modis?r.brightness:r.bright_ti4),frp:+r.frp,hr:Math.floor((+r.acq_time||0)/100)%24,day:r.daynight==='D',conf:c}}
+async function load(list){D={MODIS:[],VIIRS:[]};files=[];demo=false;pre=false;
+ for(const f of list){const p=parse(await f.text()),mo=p.h.includes('brightness');
+  const pts=p.rows.map(r=>norm(r,mo)).filter(p=>isFinite(p.lat)&&isFinite(p.lon));
+  D[mo?'MODIS':'VIIRS'].push(...pts);files.push({n:f.name.replace(/^\d+_/,''),k:mo?'MODIS':'VIIRS',c:pts.length})}
+ start()}
+function makeDemo(){let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;D={MODIS:[],VIIRS:[]};demo=true;pre=false;
+ const cl=[[65.5,-150],[64.2,-146],[66.8,-157],[62.5,-152],[67.5,-145],[63.8,-158]];
+ cl.forEach(([la,lo])=>{const n=4+Math.floor(R()*10),h0=Math.floor(R()*24);
+  for(let i=0;i<n;i++){const a=la+(R()-.5)*.12,b=lo+(R()-.5)*.3,fr=5+R()*R()*180,hr=(h0+Math.floor(R()*5))%24,day=hr>=17||hr<4,conf=R()<.6?'high':R()<.7?'nominal':'low';
+   if(R()<.75)D.VIIRS.push({lat:a,lon:b,bt:340+R()*40,frp:fr*(.8+R()*.4),hr,day,conf});
+   if(R()<.5)D.MODIS.push({lat:a+(R()-.5)*.01,lon:b+(R()-.5)*.02,bt:315+R()*50,frp:fr*(.8+R()*.4),hr:(hr+(R()<.3?1:0))%24,day,conf})}});
+ files=[{n:'Synthetic MODIS',k:'MODIS',c:D.MODIS.length},{n:'Synthetic VIIRS',k:'VIIRS',c:D.VIIRS.length}];start()}
 
-/* ---------- CSV import (real FIRMS downloads) ---------- */
-let uploaded=[];
-function parseCSV(txt){
- const L=txt.trim().split(/\r?\n/);if(L.length<2)return[];const H=L[0].split(',').map(s=>s.trim().toLowerCase()),ix=n=>H.indexOf(n),res=[];
- const cm={l:30,n:60,h:90,low:30,nominal:60,high:90};
- for(let i=1;i<L.length;i++){const c=L[i].split(','),g=n=>ix(n)>=0?(c[ix(n)]||'').trim():'';
-  const lat=+g('latitude'),lon=+g('longitude');if(isNaN(lat)||isNaN(lon)||!g('acq_date'))continue;
-  const ins=g('instrument').toUpperCase(),v=ins?ins.includes('VIIRS'):ix('bright_ti4')>=0;
-  const tt=g('acq_time').padStart(4,'0'),cf=g('confidence').toLowerCase();
-  res.push({src:v?'VIIRS':'MODIS',lat,lon,date:g('acq_date'),t:+tt.slice(0,2)*60+ +tt.slice(2),frp:+g('frp')||0,conf:cm[cf]??(+cf||0),bt:+(g(v?'bright_ti4':'brightness'))||0,sat:g('satellite')||'-',dn:g('daynight')||'-',ty:ix('type')>=0?(+g('type')||0):0})}
- return res}
-$('file').onchange=async e=>{let n=0;for(const f of e.target.files){const p=parseCSV(await f.text());uploaded=uploaded.concat(p);n+=p.length}
- if(!uploaded.length){$('srcnote').textContent='No valid FIRMS rows found in that file.';return}
- const ds=[...new Set(uploaded.map(p=>p.date))].sort();$('date').value=ds[0];
- $('srcnote').textContent=`Real data loaded: ${uploaded.length} detections (MODIS ${uploaded.filter(p=>p.src=='MODIS').length}, VIIRS ${uploaded.filter(p=>p.src=='VIIRS').length}). Dates: ${ds[0]}${ds.length>1?' → '+ds[ds.length-1]:''}.`;search()};
-$('demo').onclick=()=>{uploaded=[];$('file').value='';note();search()};
-function note(){$('srcnote').textContent='Showing simulated demo data. This hosted page can’t reach NASA’s servers, so download MODIS and VIIRS CSVs from firms.modaps.eosdis.nasa.gov/download and upload them here to harmonize real detections.'}
+const st=a=>{const n=a.length,sum=a.reduce((p,c)=>p+(c.frp||0),0);
+ return{n,sum,bt:n?a.reduce((p,c)=>p+c.bt,0)/n:NaN,day:n?a.filter(x=>x.day).length/n*100:NaN,hi:n?a.filter(x=>x.conf==='high').length/n*100:NaN}};
+const ratio=(a,b)=>isFinite(a)&&isFinite(b)&&Math.max(a,b)>0?Math.min(a,b)/Math.max(a,b)*100:NaN;
+const hist=a=>{const h=Array(24).fill(0);a.forEach(p=>h[p.hr]++);return h.map(x=>a.length?x/a.length*100:0)};
+function corr(x,y){const n=24,mx=x.reduce((p,c)=>p+c)/n,my=y.reduce((p,c)=>p+c)/n;let a=0,b=0,c=0;
+ for(let i=0;i<n;i++){a+=(x[i]-mx)*(y[i]-my);b+=(x[i]-mx)**2;c+=(y[i]-my)**2}return b&&c?a/Math.sqrt(b*c):NaN}
+const hav=(a,b)=>{const r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r,h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 12742*Math.asin(Math.sqrt(h))};
+function match(A,B){const g=new Map();B.forEach(p=>{const q=Math.floor(p.lat/.05)+','+Math.floor(p.lon/.1);(g.get(q)||g.set(q,[]).get(q)).push(p)});
+ const mA=new Set(),mB=new Set();
+ A.forEach(a=>{for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)
+  (g.get((Math.floor(a.lat/.05)+dy)+','+(Math.floor(a.lon/.1)+dx))||[]).forEach(b=>{if(hav(a,b)<=2){mA.add(a);mB.add(b)}})});
+ return{mA,mB}}
+const cells=a=>new Set(a.map(p=>Math.round(p.lat*2)+','+Math.round(p.lon)));
 
-/* ---------- harmonization ---------- */
-const hav=(a,b,c,d)=>{const R=6371,p=Math.PI/180,x=Math.sin((c-a)*p/2)**2+Math.cos(a*p)*Math.cos(c*p)*Math.sin((d-b)*p/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
-function harmonize(M,V,km,win){
- const B=.25,bk=new Map(),key=(a,b)=>a+','+b,g=new Map(),id=(p,i)=>p+i;
- M.forEach((m,i)=>{const k=key(Math.floor(m.lat/B),Math.floor(m.lon/B));if(!bk.has(k))bk.set(k,[]);bk.get(k).push(i)});
- V.forEach((v,j)=>{let best=-1,bd=1e9;const a=Math.floor(v.lat/B),o=Math.floor(v.lon/B);
-  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)for(const i of bk.get(key(a+dy,o+dx))||[]){const m=M[i];
-   if(Math.abs(m.t-v.t)>win)continue;const d=hav(m.lat,m.lon,v.lat,v.lon);if(d<=km&&d<bd){bd=d;best=i}}
-  if(best>=0){if(!g.has(best))g.set(best,[]);g.get(best).push({j,d:bd})}});
- const R=[],used=new Set();let k=0;
- g.forEach((list,i)=>{const m=M[i],vs=list.map(x=>V[x.j]);list.forEach(x=>used.add(x.j));
-  const w=vs.reduce((s,v)=>s+(v.frp||1),0),vl=vs.reduce((s,v)=>s+v.lat*(v.frp||1),0)/w,vo=vs.reduce((s,v)=>s+v.lon*(v.frp||1),0)/w;
-  const vf=vs.reduce((s,v)=>s+v.frp,0),vc=vs.reduce((s,v)=>s+v.conf,0)/vs.length,vt=Math.round(vs.reduce((s,v)=>s+v.t,0)/vs.length);
-  R.push({kind:'both',ty:m.ty,lat:vl,lon:vo,date:m.date,t:vt,frp:(m.frp+vf)/2,conf:(m.conf+vc)/2,bt:(m.bt+vs.reduce((s,v)=>s+v.bt,0)/vs.length)/2,sat:m.sat+'+'+[...new Set(vs.map(v=>v.sat))].join('/'),dn:m.dn,
-   mLat:m.lat,mLon:m.lon,vLat:vl,vLon:vo,dist:list.reduce((s,x)=>s+x.d,0)/list.length,dt:Math.abs(m.t-vt),nV:vs.length})});
- M.forEach((m,i)=>{if(!g.has(i))R.push({kind:'MODIS',...m,mLat:m.lat,mLon:m.lon})});
- V.forEach((v,j)=>{if(!used.has(j))R.push({kind:'VIIRS',...v,vLat:v.lat,vLon:v.lon,nV:1})});
- return{R,pairs:g.size,merged:used.size}}
+// ---------- screens ----------
+function home(){
+ const has=D.MODIS.length+D.VIIRS.length>0;
+ app.innerHTML=`<h1>Satellite Showdown</h1>
+ <p class="mute" style="max-width:48ch">Two satellite teams scanned Alaska for fires. Guess who found more, who saw hotter, and how often they spotted the same fire.</p>
+ <label class="upbar"><input type="file" id="f" accept=".csv" multiple><b>Upload your data</b><span>Choose your MODIS and VIIRS CSV files (select several at once) or drop them here</span></label>
+ <p><label for="ct"><b>Country map</b> for your final results: </label><select id="ct" class="sel">${COUNTRIES.map((c,i)=>`<option value="${i}"${i==ctry?' selected':''}>${c.n}</option>`).join('')}</select></p>
+ <div class="teams"><div class="team mo"><b>MODIS</b>Wide 1 km view</div><div class="team vi"><b>VIIRS</b>Sharp 375 m view</div></div>
+ ${files.length?`<p>${pre?'Loaded from the files you sent: ':''}${files.map(f=>`<span class="chip">${f.n}: ${f.c} fires</span>`).join('')}</p>`:''}
+ ${files.length&&!has?`<div class="note"><b>These files have no fires in them.</b> Each CSV has headers only, so Alaska had zero detections in this 24-hour window. Try the demo round, or load files from a busier day.</div>`:''}
+ <div class="row">
+  ${has?`<button class="btn go" id="s">Start game</button>`:`<button class="btn go" id="d">Play with demo data</button>`}
+  
+ </div>
+ ${has&&!demo?`<p><button class="btn" id="d" style="font-size:15px;padding:8px 14px">Play with demo data instead</button></p>`:''}
+ ${has?`<p><button class="btn" id="ex">Explore the data instead</button></p>`:''}${getBest()?`<p class="res">Your best score: ${getBest()} pts</p>`:''}
+ <p class="mute" style="font-size:15px">Pick all your FIRMS files at once, or drop them anywhere on this page. Nothing is uploaded; it all runs in your browser.</p>`;
+ $('#f').onchange=e=>load([...e.target.files]);
+ $('#d').onclick=makeDemo;if($('#s'))$('#s').onclick=start;if($('#ex'))$('#ex').onclick=explore;$('#ct').onchange=e=>{ctry=+e.target.value};}
 
-/* ---------- search ---------- */
-let REC=[],view=null,tot={},hl=null;
-function search(){
- const d=$('date').value,src=uploaded.length?uploaded:null;
- let raw=src?src.filter(p=>p.date===d):gen(d);const allN=raw.length;if($('veg').checked)raw=raw.filter(p=>!p.ty);const exc=allN-raw.length;
- if(uploaded.length&&!raw.length)$('msg').textContent='No detections for this date in the uploaded files.';
- let M=$('useM').checked?raw.filter(p=>p.src==='MODIS'):[],V=$('useV').checked?raw.filter(p=>p.src==='VIIRS'):[];
- let R,pairs=0,merged=0;
- if($('harm').checked&&M.length&&V.length){({R,pairs,merged}=harmonize(M,V,+$('km').value,+$('win').value))}
- else R=[...M.map(m=>({kind:'MODIS',...m,mLat:m.lat,mLon:m.lon})),...V.map(v=>({kind:'VIIRS',...v,vLat:v.lat,vLon:v.lon,nV:1}))];
- hl=null;REC=R;tot={m:M.length,v:V.length,pairs,merged,fin:R.length};
- REC.forEach((r,i)=>r.id='FW'+d.replace(/-/g,'')+'-'+String(i+1).padStart(5,'0'));
- $('stats').innerHTML=[['MODIS detections',tot.m],['VIIRS detections',tot.v],['Harmonized fires',pairs],['Duplicates removed',M.length+V.length-R.length],['Final records',R.length],['Non-vegetation excluded',exc]].map(([a,b])=>`<div class="stat"><b>${b}</b><small>${a}</small></div>`).join('');
- $('headline').innerHTML=R.length?`<b>${R.length.toLocaleString()}</b> fire${R.length>1?'s':''} on ${d}`+($('harm').checked&&M.length&&V.length?` — <b>${pairs}</b> confirmed by both satellites (red dots).`:'.'):'No fires found for this date and settings. Try another date, or untick “Vegetation only” to see all heat sources.';
- if(raw.length)$('msg').textContent=`${M.length} MODIS + ${V.length} VIIRS detections, matched within ${$('km').value} km and ${$('win').value} min. Merged records use the sharper VIIRS position and the average fire power. Click a row to zoom to it.`;
- table();draw();$('save').disabled=!(dl&&R.length)}
-const hh=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
-const LB={both:'MODIS+VIIRS',MODIS:'MODIS',VIIRS:'VIIRS'},TY={0:'Vegetation fire',1:'Volcano',2:'Static land source',3:'Offshore'};
-function table(){const rows=[...REC].sort((a,b)=>b.frp-a.frp).slice(0,100);
- $('tbl').innerHTML='<tr><th>ID</th><th>Source</th><th>Lat</th><th>Lon</th><th>Time UTC</th><th title="Fire radiative power: how intense the fire is">Fire power (MW)</th><th title="How sure the satellite is that this is a real fire">Confidence %</th><th>Satellite</th><th>Type</th></tr>'+rows.map(r=>`<tr data-id="${r.id}" style="cursor:pointer"><td>${r.id}</td><td>${LB[r.kind]}</td><td>${r.lat.toFixed(4)}</td><td>${r.lon.toFixed(4)}</td><td>${hh(r.t)}</td><td>${r.frp.toFixed(1)}</td><td>${Math.round(r.conf)}</td><td>${r.sat}</td><td>${TY[r.ty||0]}</td></tr>`).join('')}
+function start(){
+ const a=st(D.MODIS),b=st(D.VIIRS);
+ if(!a.n&&!b.n){home();return}
+ if(!a.n||!b.n){app.innerHTML=`<h1>One team missing</h1><div class="note">Only ${a.n?'MODIS':'VIIRS'} has detections. The showdown needs both sensors to have at least one fire. Load more files to play.</div><p><button class="btn" id="b">Back</button></p>`;$('#b').onclick=home;return}
+ const {mA,mB}=match(D.MODIS,D.VIIRS);
+ G={i:0,score:0,streak:0,best:0,twins:0,right:0,a,b,mA,mB,
+  rounds:[
+   {q:'Which team found more fires?',x:a.n,y:b.n,f:v=>fmt(v)},
+   {q:'Which team measured more total fire power?',x:a.sum,y:b.sum,f:v=>fmt(v)+' MW'},
+   {q:'Which team saw the hotter fires, on average?',x:a.bt,y:b.bt,f:v=>fmt(v)+' K'},
+   {q:'Which team caught a bigger share of its fires in daylight?',x:a.day,y:b.day,f:v=>fmt(v)+'%'},
+   {q:'Which team was more sure of its detections (high confidence)?',x:a.hi,y:b.hi,f:v=>fmt(v)+'%'},
+   {match:1}]};
+ round()}
 
-/* ---------- CSV export ---------- */
-const COLS=['record_id','source','latitude','longitude','acq_date','acq_time_utc','frp_mw','confidence_pct','brightness_k','satellite','daynight','fire_type','modis_lat','modis_lon','viirs_lat','viirs_lon','match_dist_km','time_gap_min','viirs_pixels','harmonized'];
-function csv(){const f=(v,n)=>v==null||v===''?'':typeof v=='number'?v.toFixed(n):v;
- return COLS.join(',')+'\n'+REC.map(r=>[r.id,LB[r.kind],f(r.lat,5),f(r.lon,5),r.date,hh(r.t),f(r.frp,1),Math.round(r.conf),f(r.bt,1),r.sat,r.dn,TY[r.ty||0],f(r.mLat,5),f(r.mLon,5),f(r.vLat,5),f(r.vLon,5),r.kind=='both'?f(r.dist,3):'',r.kind=='both'?r.dt:'',r.nV??'',r.kind=='both'?'yes':'no'].join(',')).join('\n')}
-let dl=null;
-$('save').onclick=async()=>{try{await dl.save({filename:`firms_harmonized_${$('date').value}.csv`,data:csv()})}catch(e){if(e&&e.code!=='declined')$('msg').textContent='Could not save: '+(e.message||e.code)}};
-try{window.claude&&claude.use('downloads').then(d=>{dl=d;$('save').style.display=d?'':'none';$('save').disabled=!(d&&REC.length)}).catch(()=>{$('save').style.display='none'})}catch(e){$('save').style.display='none'}
+function hud(){return`<div class="hud"><div class="dots">${G.rounds.map((_,i)=>`<i class="${i<G.i?'on':''}"></i>`).join('')}</div><span class="pill">${G.score} pts${G.streak>1?` · ${G.streak} streak`:''}</span><button class="tb" data-act="new">New game</button><button class="tb" data-act="exit">Exit</button></div>`}
 
-/* ---------- map ---------- */
-const cv=$('cv'),ctx=cv.getContext('2d'),tip=$('tip');let W=0,H=0,dpr=1,pts=[];
-function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
-function fit(b){const ar=W/H;let [x0,y0,x1,y1]=b,cx=(x0+x1)/2,cy=(y0+y1)/2,w=x1-x0,h=y1-y0;if(w/h<ar)w=h*ar;else h=w/ar;view=[cx-w/2,cy-h/2,cx+w/2,cy+h/2]}
-function size(){const r=cv.getBoundingClientRect();dpr=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;if(!view||!view.fresh)fit(REG[$('region').value]);draw()}
-const X=l=>(l-view[0])/(view[2]-view[0])*W,Y=l=>(view[3]-l)/(view[3]-view[1])*H;
-function draw(){if(!view||!W)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=css('--sea');ctx.fillRect(0,0,W,H);
- ctx.fillStyle=css('--land');LAND.forEach(p=>{ctx.beginPath();for(let i=0;i<p.length;i+=2){const x=X(p[i]),y=Y(p[i+1]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fill()});
- const span=view[2]-view[0],st=span>200?30:span>80?10:span>30?5:span>10?2:1;ctx.strokeStyle=css('--grid');ctx.fillStyle=css('--mut');ctx.lineWidth=.5;ctx.font='10px system-ui';ctx.beginPath();
- for(let x=Math.ceil(view[0]/st)*st;x<=view[2];x+=st){ctx.moveTo(X(x),0);ctx.lineTo(X(x),H);ctx.fillText(x+'°',X(x)+2,H-3)}
- for(let y=Math.ceil(view[1]/st)*st;y<=view[3];y+=st){ctx.moveTo(0,Y(y));ctx.lineTo(W,Y(y));ctx.fillText(y+'°',3,Y(y)-2)}ctx.stroke();
- const r=Math.max(2,Math.min(8,W/span*.02)),col={MODIS:css('--mo'),VIIRS:css('--vi'),both:css('--hm')};pts=[];
- ['MODIS','VIIRS','both'].forEach(k=>{ctx.fillStyle=col[k];ctx.globalAlpha=k=='both'?1:.75;REC.forEach(p=>{if(p.kind!==k)return;const x=X(p.lon),y=Y(p.lat);if(x<-9||y<-9||x>W+9||y>H+9)return;pts.push([x,y,p]);ctx.beginPath();ctx.arc(x,y,k=='both'?r*1.5:k=='MODIS'?r*1.2:r,0,7);ctx.fill();if(k=='both'){ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke()}})});ctx.globalAlpha=1;if(hl){ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(hl.lon),Y(hl.lat),14,0,7);ctx.stroke()}}
-function zoom(f,cx=W/2,cy=H/2){const lx=view[0]+cx/W*(view[2]-view[0]),ly=view[3]-cy/H*(view[3]-view[1]);view=[lx+(view[0]-lx)*f,ly+(view[1]-ly)*f,lx+(view[2]-lx)*f,ly+(view[3]-ly)*f];view.fresh=1;draw()}
-let drag=null;
-cv.onpointerdown=e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'};
-cv.onpointerup=()=>{drag=null;cv.style.cursor='grab'};
-cv.onpointermove=e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
- if(drag){const dx=(e.clientX-drag[0])/W*(view[2]-view[0]),dy=(e.clientY-drag[1])/H*(view[3]-view[1]);view=[view[0]-dx,view[1]+dy,view[2]-dx,view[3]+dy];view.fresh=1;drag=[e.clientX,e.clientY];draw();tip.style.display='none';return}
- let b=null,bd=100;for(const q of pts){const d=(q[0]-mx)**2+(q[1]-my)**2;if(d<bd){bd=d;b=q}}
- if(b){const p=b[2];tip.style.display='block';tip.style.left=Math.min(mx+12,W-270)+'px';tip.style.top=my+12+'px';
-  tip.innerHTML=`<b>${LB[p.kind]}</b> · ${p.id}<br>${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}<br>${p.date} ${hh(p.t)} UTC · ${p.sat}<br>${TY[p.ty||0]}<br>FRP ${p.frp.toFixed(1)} MW · conf ${Math.round(p.conf)}%`+(p.kind=='both'?`<br>match ${p.dist.toFixed(2)} km, ${p.dt} min apart, ${p.nV} VIIRS px`:'')}else tip.style.display='none'};
-cv.onwheel=e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY>0?1.25:.8,e.clientX-r.left,e.clientY-r.top)};
-const sh=n=>{const d=new Date($('date').value+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);$('date').value=d.toISOString().slice(0,10);search()};$('dprev').onclick=()=>sh(-1);$('dnext').onclick=()=>sh(1);$('hx').onclick=()=>$('how').style.display='none';$('zr').onclick=()=>{fit(REG[$('region').value]);draw()};
-$('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;const r=REC.find(x=>x.id===tr.dataset.id);if(r){hl=r;fit([r.lon-.5,r.lat-.5,r.lon+.5,r.lat+.5]);view.fresh=1;draw();$('mapbox').scrollIntoView({behavior:'smooth',block:'center'})}};
-$('zi').onclick=()=>zoom(.7);$('zo').onclick=()=>zoom(1.4);
-$('region').onchange=()=>{fit(REG[$('region').value]);draw()};
-$('km').oninput=e=>$('kmv').textContent=(+e.target.value).toFixed(1);$('win').oninput=e=>$('winv').textContent=e.target.value;
-$('go').onclick=search;['useM','useV','harm','veg'].forEach(i=>$(i).onchange=search);$('date').onchange=search;
-addEventListener('resize',size);matchMedia('(prefers-color-scheme:dark)').onchange=draw;
-note();size();search();
-</script></body></html>
+function round(){
+ if(G.i>=G.rounds.length){return end()}
+ const r=G.rounds[G.i];
+ if(r.match){
+  app.innerHTML=`${hud()}<h2>Bonus: how often did they spot the same fire?</h2>
+  <p class="mute">Out of every 100 MODIS hotspots, how many had a VIIRS hotspot within 2 km? Slide to guess. Within 15 points scores.</p>
+  <div class="card"><div class="big" style="font-size:54px;color:var(--both)" id="gv">50%</div>
+  <input type="range" id="sl" min="0" max="100" value="50" aria-label="Your guess in percent"></div>
+  <p><button class="btn go" id="ok">Lock in guess</button></p><div id="rv"></div>`;
+  $('#sl').oninput=e=>$('#gv').textContent=e.target.value+'%';
+  $('#ok').onclick=()=>{const g=+$('#sl').value,act=G.a.n?G.mA.size/G.a.n*100:0,d=Math.abs(g-act);
+   $('#ok').disabled=true;$('#sl').disabled=true;let pts=0,msg;
+   if(d<=5){pts=15;msg='Bullseye!'}else if(d<=15){pts=10;msg='Close enough, nice.'}else msg='Off the mark this time.';
+   G.score+=pts;if(pts)G.right++;
+   $('#rv').innerHTML=`<div class="card pop"><div class="res ${pts?'win':'lose'}">${msg} +${pts} pts</div>Actual match rate: <b>${fmt(act)}%</b> (you guessed ${g}%).<p><button class="btn go" id="nx">See final results</button></p></div>`;
+   $('#hud')&&0;$('#nx').onclick=()=>{G.i++;round()};$('#nx').focus()};
+  return}
+ app.innerHTML=`${hud()}<h2>${r.q}</h2>
+ <div class="row three"><button class="btn mo" data-p="M">MODIS</button><button class="btn" data-p="T">Too close</button><button class="btn vi" data-p="V">VIIRS</button></div>
+ <p class="mute" style="font-size:15px">“Too close” is correct when the two are within 10% of each other.</p><div id="rv"></div>`;
+ document.querySelectorAll('[data-p]').forEach(bt=>bt.onclick=()=>{
+  const sim=ratio(r.x,r.y),ans=sim>=90?'T':r.x>r.y?'M':'V',ok=bt.dataset.p===ans,twin=sim>=80,mx=Math.max(r.x,r.y)||1;
+  document.querySelectorAll('[data-p]').forEach(b=>b.disabled=true);
+  let pts=(ok?10:0)+(twin?5:0);G.score+=pts;G.twins+=twin?1:0;G.right+=ok?1:0;G.streak=ok?G.streak+1:0;G.best=Math.max(G.best,G.streak);
+  const who=ans==='T'?'It was a tie':ans==='M'?'MODIS wins':'VIIRS wins';
+  $('#rv').innerHTML=`<div class="card pop"><div class="res ${ok?'win':'lose'}">${ok?'Correct!':'Not quite.'} ${who}. +${pts} pts</div>
+  <div class="bars"><div class="bar"><span class="t m">MODIS</span><div class="tr"><i id="b1" style="background:var(--modis)"></i></div><b>${r.f(r.x)}</b></div>
+  <div class="bar"><span class="t v">VIIRS</span><div class="tr"><i id="b2" style="background:var(--viirs)"></i></div><b>${r.f(r.y)}</b></div></div>
+  ${twin?`<div class="twin">Twin alert: the teams are ${fmt(sim)}% alike here. +5 teamwork points.</div>`:`<div class="mute">Only ${fmt(sim)}% alike on this one.</div>`}
+  <p><button class="btn go" id="nx">Next round</button></p></div>`;
+  requestAnimationFrame(()=>{$('#b1').style.width=r.x/mx*100+'%';$('#b2').style.width=r.y/mx*100+'%'});
+  $('#nx').onclick=()=>{G.i++;round()};$('#nx').focus()})}
+
+function end(){
+ const max=5*15+15,pc=G.score/max,rank=pc>=.7?'Satellite Master':pc>=.4?'Fire Spotter':'Rookie Ranger';
+ const bd=[];if(G.twins>=3)bd.push('Twin Finder');if(G.best>=3)bd.push(`Streak ×${G.best}`);if(G.right>=6)bd.push('Perfect Run');if(G.mA.size&&G.mA.size/G.a.n>=.5)bd.push('Teams Overlap');
+ const hc=corr(hist(D.MODIS),hist(D.VIIRS)),ca=cells(D.MODIS),cb=cells(D.VIIRS),jac=[...ca].filter(x=>cb.has(x)).length/(new Set([...ca,...cb]).size||1)*100;
+ app.innerHTML=`${demo?'<div class="note">Synthetic demo data: generated, not real observations.</div>':''}
+ <h1>Game over</h1><div class="rank">${rank}</div><p class="res">${G.score} of ${max} points</p><p class="mute">Your best: ${saveBest(G.score)} pts</p><p><button class="btn" id="sh">Copy my result</button> <span id="shm" class="mute" role="status"></span></p>
+ <div class="badges">${bd.map(x=>`<span class="badge">${x}</span>`).join('')||'<span class="mute">No badges yet. Play again to earn some.</span>'}</div>
+ <h2 style="margin-top:28px">What the teams had in common</h2>
+ <div class="grid">
+  <div><b>${fmt(G.mA.size/G.a.n*100)}%</b>of MODIS hotspots had a VIIRS hotspot within 2 km</div>
+  <div><b>${fmt(G.mB.size/G.b.n*100)}%</b>of VIIRS hotspots had a MODIS hotspot within 2 km</div>
+  <div><b>${fmt(jac)}%</b>of occupied 50 km areas held both teams</div>
+  <div><b>${fmt(hc,2)}</b>timing correlation by hour (1 = identical)</div></div>
+ <h2 style="margin-top:28px">The map of ${COUNTRIES[ctry].n}</h2>
+ <div class="leg"><span><i class="sw" style="background:var(--modis)"></i>MODIS</span><span><i class="sw" style="background:var(--viirs)"></i>VIIRS</span><span><i class="sw" style="background:var(--both)"></i>Spotted by both</span></div>
+ <canvas id="map" role="img" aria-label="Map of detections"></canvas><p class="mute" id="mapnote" style="font-size:14px"></p>
+ <h2 style="margin-top:28px">When they spotted fires (UTC hour)</h2><div class="chart" id="hr"></div>
+ <div class="row"><button class="btn go" id="again">Play again</button><label class="btn"><input type="file" id="f" accept=".csv" multiple>Load new files</label><button class="btn" data-act="exit">Exit to home</button></div>`;
+ $('#again').onclick=start;$('#sh').onclick=()=>copy(`I scored ${G.score}/${max} and earned the rank ${rank} in Satellite Showdown, comparing MODIS and VIIRS fire detections over Alaska${demo?' (demo data)':''}.`,$('#shm'));$('#f').onchange=e=>load([...e.target.files]);
+ drawMap();drawHr()}
+
+function drawMap(){const c=$('#map'),dpr=devicePixelRatio||1,W=c.clientWidth,H=380;c.width=W*dpr;c.height=H*dpr;
+ const x=c.getContext('2d');x.scale(dpr,dpr);const all=[...D.MODIS,...D.VIIRS],cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue('--'+n).trim();
+ const ps=COUNTRIES[ctry].p,la0=Math.min(...ps.map(q=>q[1]))-.5,la1=Math.max(...ps.map(q=>q[1]))+.5,lo0=Math.min(...ps.map(q=>q[0]))-.8,lo1=Math.max(...ps.map(q=>q[0]))+.8;
+ const k=Math.cos((la0+la1)/2*Math.PI/180),sc=Math.min((W-20)/((lo1-lo0)*k),(H-20)/(la1-la0)),ox=(W-(lo1-lo0)*k*sc)/2,oy=(H-(la1-la0)*sc)/2,px=p=>[ox+(p.lon-lo0)*k*sc,H-oy-(p.lat-la0)*sc];
+ x.strokeStyle=col('line');x.lineWidth=1;for(let la=Math.ceil(la0/5)*5;la<la1;la+=5){const y=px({lon:lo0,lat:la})[1];x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke()}
+ x.fillStyle=col('ok');x.strokeStyle=col('mute');x.lineWidth=1.5;x.beginPath();ps.forEach((q,i)=>{const[a,b]=px({lon:q[0],lat:q[1]});i?x.lineTo(a,b):x.moveTo(a,b)});x.closePath();x.fill();x.stroke();
+ D.VIIRS.forEach(p=>{const[a,b]=px(p);x.fillStyle=col('viirs');x.globalAlpha=.8;x.beginPath();x.arc(a,b,3,0,7);x.fill()});
+ x.globalAlpha=1;x.lineWidth=2;D.MODIS.forEach(p=>{const[a,b]=px(p);x.strokeStyle=col('modis');x.beginPath();x.arc(a,b,6,0,7);x.stroke()});
+ x.lineWidth=3;x.strokeStyle=col('both');G.mA.forEach(p=>{const[a,b]=px(p);x.beginPath();x.arc(a,b,9,0,7);x.stroke()});
+ x.fillStyle=col('both');G.mB.forEach(p=>{const[a,b]=px(p);x.beginPath();x.arc(a,b,3.5,0,7);x.fill()});
+ const o=all.filter(p=>p.lat<la0||p.lat>la1||p.lon<lo0||p.lon>lo1).length;
+ $('#mapnote').textContent=(o?`${o} of ${all.length} detections fall outside this map. Pick a different country on the home screen to see them. `:'')+'Country outlines are simplified.'}
+function drawHr(){const h1=hist(D.MODIS),h2=hist(D.VIIRS),mx=Math.max(...h1,...h2,1),W=720,H=160,bw=W/24;
+ let s=`<svg viewBox="0 0 ${W} ${H+22}" width="100%" role="img" aria-label="Detections by UTC hour">`;
+ for(let i=0;i<24;i++){const a=h1[i]/mx*H,b=h2[i]/mx*H;
+  s+=`<rect x="${i*bw+3}" y="${H-a}" width="${bw/2-3}" height="${a}" fill="var(--modis)"/><rect x="${i*bw+bw/2}" y="${H-b}" width="${bw/2-3}" height="${b}" fill="var(--viirs)"/>`;
+  if(i%4==0)s+=`<text x="${i*bw+3}" y="${H+15}">${String(i).padStart(2,'0')}:00</text>`}
+ $('#hr').innerHTML=s+'</svg>'}
+addEventListener('resize',()=>{if(G&&$('#map'))drawMap()});
+function getBest(){try{return +localStorage.getItem('ss-best')||0}catch(e){return 0}}
+function saveBest(s){let b=getBest();if(s>b){b=s;try{localStorage.setItem('ss-best',b)}catch(e){}}return b}
+function copy(t,el){const ok=()=>el.textContent='Copied!';const fb=()=>{const a=document.createElement('textarea');a.value=t;document.body.append(a);a.select();try{document.execCommand('copy');ok()}catch(e){el.textContent='Copy failed. Select and copy the text manually.'}a.remove()};
+ try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}}
+function explore(){const X=explore.x=explore.x||{dn:'all',cf:'all'};
+ const fl=a=>a.filter(p=>(X.dn=='all'||(X.dn=='day')==p.day)&&(X.cf=='all'||p.conf==X.cf)),A=st(fl(D.MODIS)),B=st(fl(D.VIIRS));
+ const rows=[['Detections',A.n,B.n],['Total fire power (MW)',A.sum,B.sum],['Mean fire power (MW)',A.n?A.sum/A.n:NaN,B.n?B.sum/B.n:NaN],['Mean brightness (K)',A.bt,B.bt],['Daytime share (%)',A.day,B.day],['High confidence share (%)',A.hi,B.hi]];
+ const opt=(k,v)=>v.map(([x,l])=>`<button class="btn f" data-k="${k}" data-v="${x}" aria-pressed="${X[k]==x}">${l}</button>`).join('');
+ app.innerHTML=`<h2>Explore the data</h2><p class="mute">Filter both sensors the same way. Rows shaded purple are at least 80% alike.</p>
+ <div class="filt">${opt('dn',[['all','All day'],['day','Day'],['night','Night']])}</div><div class="filt">${opt('cf',[['all','Any confidence'],['high','High'],['nominal','Nominal'],['low','Low']])}</div>
+ <div class="wrap"><table><thead><tr><th>Measure</th><th class="m">MODIS</th><th class="v">VIIRS</th><th>Alike</th></tr></thead><tbody>${rows.map(([n,x,y])=>{const s=ratio(x,y);return`<tr class="${s>=80?'sim':''}"><td>${n}</td><td>${fmt(x,1)}</td><td>${fmt(y,1)}</td><td>${fmt(s)}%</td></tr>`}).join('')}</tbody></table></div>
+ <p><button class="btn go" id="bk">Back to game</button></p>`;
+ document.querySelectorAll('.f').forEach(b=>b.onclick=()=>{X[b.dataset.k]=b.dataset.v;explore();document.querySelector(`.f[data-k="${b.dataset.k}"][data-v="${b.dataset.v}"]`).focus()});$('#bk').onclick=home}
+const root=document.documentElement;
+$('#th').onclick=()=>{const dk=root.dataset.theme?root.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.dataset.theme=dk?'light':'dark';$('#th').setAttribute('aria-pressed',String(!dk));if(G&&$('#map'))drawMap()};
+$('#ab').onclick=()=>$('#dlg').showModal();$('#cl').onclick=()=>$('#dlg').close();
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;window.scrollTo(0,0);a.dataset.act==='exit'?home():start()});
+addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag')});
+addEventListener('dragleave',()=>document.body.classList.remove('drag'));
+addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drag');const f=[...e.dataTransfer.files].filter(x=>/\.csv$/i.test(x.name));if(f.length)load(f)});
+home();
+</script>
+</body>
+</html>
